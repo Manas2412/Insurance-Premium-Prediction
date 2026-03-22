@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from Schema.user_input import User
 from Model.predict import model, MODEL_VERSION, predict_premium
+from Schema.prediction_presponse import PredictionResponse
 
 app = FastAPI()
 
@@ -13,7 +14,7 @@ def home():
 def health_check():
     return {"status": "healthy", "model_version": MODEL_VERSION, 'model_loaded': model is not None}
 
-@app.post("/predict")
+@app.post("/predict", response_model=PredictionResponse)
 def predict_premium(user: User):
     
     user_input = [{
@@ -25,6 +26,8 @@ def predict_premium(user: User):
         'city_tier': user.city_tier
     }]
     
-    prediction =  predict_premium(user_input)
-    
-    return JSONResponse(content={"predicted_premium": prediction})
+    try: 
+        prediction =  predict_premium(user_input)
+        return JSONResponse(content={"predicted_premium": prediction})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
